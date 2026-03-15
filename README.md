@@ -7,11 +7,8 @@ Full-stack chat app with file support (text, images, PDF, Excel, Word, audio), M
 
 ## Features
 
-- **Auth**: Sign up / sign in; JWT-based sessions. First registered user is an **admin**.
-- **Chat**: Text and file-based Q&A (images, PDF, Excel, Word, audio)
+- **Chat**: Text and file-based Q&A (images, PDF, Excel, Word, audio). No sign-in required.
 - **API key**: Configure Groq API key in Settings (stored in browser)
-- **Conversations**: Stored in MongoDB per user; list, load, delete (scoped to current user)
-- **Admin panel** (admin only): View all users and conversations at `/admin`; admins can also use the app as normal users.
 - **Deploy**: GitHub Actions CI/CD → Azure Container Registry, Azure Container Apps
 
 ## Stack

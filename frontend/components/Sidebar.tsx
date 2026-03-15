@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -13,14 +12,12 @@ export function Sidebar({
   onNewChat,
   onOpenSettings,
   getAuthHeaders,
-  isAdmin,
 }: {
   conversationId: string | null;
   onSelectConversation: (id: string) => void;
   onNewChat: () => void;
   onOpenSettings: () => void;
   getAuthHeaders: () => Record<string, string>;
-  isAdmin: boolean;
 }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);

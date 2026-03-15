@@ -4,12 +4,14 @@ import { useState, useCallback, useEffect } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
 import { Sidebar } from "@/components/Sidebar";
 import { SettingsModal } from "@/components/SettingsModal";
-import { useAuth } from "@/contexts/AuthContext";
 
 const API_KEY_STORAGE = "chat_groq_api_key";
 
+function getAuthHeaders(): Record<string, string> {
+  return {};
+}
+
 export default function Home() {
-  const { loading: authLoading, getAuthHeaders, isAdmin } = useAuth();
   const [apiKey, setApiKeyState] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -28,14 +30,6 @@ export default function Home() {
     }
   }, []);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[var(--muted)]">Loading...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
@@ -44,7 +38,6 @@ export default function Home() {
         onNewChat={() => setConversationId(null)}
         onOpenSettings={() => setSettingsOpen(true)}
         getAuthHeaders={getAuthHeaders}
-        isAdmin={isAdmin}
       />
       <main className="flex-1 flex flex-col min-w-0">
         <ChatInterface
