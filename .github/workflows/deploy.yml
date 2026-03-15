@@ -58,6 +58,16 @@ jobs:
 
       - name: Deploy Backend to Container Apps
         run: |
+          SERVER="${{ env.ACR_LOGIN_SERVER }}"
+          ACR_NAME="${SERVER%.azurecr.io}"
+          ACR_USER=$(az acr credential show --name "$ACR_NAME" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$ACR_NAME" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" --query "passwords[0].value" -o tsv)
+          az containerapp registry set \
+            --name ${{ env.CONTAINER_APP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server "$SERVER" \
+            --username "$ACR_USER" \
+            --password "$ACR_PASS"
           az containerapp update \
             --name ${{ env.CONTAINER_APP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -65,6 +75,16 @@ jobs:
 
       - name: Deploy Frontend to Container Apps
         run: |
+          SERVER="${{ env.ACR_LOGIN_SERVER }}"
+          ACR_NAME="${SERVER%.azurecr.io}"
+          ACR_USER=$(az acr credential show --name "$ACR_NAME" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$ACR_NAME" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" --query "passwords[0].value" -o tsv)
+          az containerapp registry set \
+            --name ${{ env.CONTAINER_APP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server "$SERVER" \
+            --username "$ACR_USER" \
+            --password "$ACR_PASS"
           az containerapp update \
             --name ${{ env.CONTAINER_APP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
