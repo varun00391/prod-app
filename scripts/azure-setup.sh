@@ -7,7 +7,15 @@ set -e
 RESOURCE_GROUP="${RESOURCE_GROUP:-chatgpt-app-rg}"
 LOCATION="${LOCATION:-eastus}"
 PROJECT_NAME="${PROJECT_NAME:-chatgpt-app}"
-ACR_NAME="${ACR_NAME:-${PROJECT_NAME}acr}"
+# ACR names must be alphanumeric only (no hyphens), 5-50 chars, and globally unique in Azure
+# Use a short suffix from subscription ID so re-runs and different users get unique names
+_SUB_ID=$(az account show --query id -o tsv 2>/dev/null | tr -d '-' || true)
+if [ -n "$_SUB_ID" ]; then
+  ACR_SUFFIX=${_SUB_ID:0:8}
+else
+  ACR_SUFFIX=$(( RANDOM % 900000 + 100000 ))
+fi
+ACR_NAME="${ACR_NAME:-$(echo "$PROJECT_NAME" | tr -d '-')acr${ACR_SUFFIX}}"
 ENVIRONMENT_NAME="${PROJECT_NAME}-env"
 BACKEND_APP_NAME="${PROJECT_NAME}-backend"
 FRONTEND_APP_NAME="${PROJECT_NAME}-frontend"
@@ -20,11 +28,15 @@ az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none 2>
 
 # 2) Azure Container Registry
 echo "--- Creating ACR ---"
-az acr create \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$ACR_NAME" \
-  --sku Basic \
-  --output none 2>/dev/null || true
+if az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+  echo "ACR '$ACR_NAME' already exists, skipping create."
+else
+  az acr create \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$ACR_NAME" \
+    --sku Basic \
+    --output none
+fi
 
 ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --query loginServer --output tsv)
 echo "ACR: $ACR_LOGIN_SERVER"
@@ -43,18 +55,23 @@ az monitor log-analytics workspace create \
   --location "$LOCATION" \
   --output none 2>/dev/null || true
 
-LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show --resource-group "$RESOURCE_GROUP" --workspace-name "$LOG_ANALYTICS_NAME" --query id --output tsv)
+# Container Apps environment expects Log Analytics customerId (GUID), not the workspace resource id
+LOG_ANALYTICS_CUSTOMER_ID=$(az monitor log-analytics workspace show --resource-group "$RESOURCE_GROUP" --workspace-name "$LOG_ANALYTICS_NAME" --query customerId --output tsv)
 LOG_ANALYTICS_KEY=$(az monitor log-analytics workspace get-shared-keys --resource-group "$RESOURCE_GROUP" --workspace-name "$LOG_ANALYTICS_NAME" --query primarySharedKey --output tsv)
 
 # 4) Container Apps environment
 echo "--- Creating Container Apps environment ---"
-az containerapp env create \
-  --name "$ENVIRONMENT_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --logs-workspace-id "$LOG_ANALYTICS_ID" \
-  --logs-workspace-key "$LOG_ANALYTICS_KEY" \
-  --output none 2>/dev/null || true
+if az containerapp env show --name "$ENVIRONMENT_NAME" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+  echo "Container Apps environment '$ENVIRONMENT_NAME' already exists, skipping create."
+else
+  az containerapp env create \
+    --name "$ENVIRONMENT_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION" \
+    --logs-workspace-id "$LOG_ANALYTICS_CUSTOMER_ID" \
+    --logs-workspace-key "$LOG_ANALYTICS_KEY" \
+    --output none
+fi
 
 # 5) Backend container app (placeholder image until first CI push; workflow updates to ACR image)
 BACKEND_IMAGE="${ACR_LOGIN_SERVER}/${PROJECT_NAME}-backend:latest"
@@ -62,20 +79,24 @@ MONGODB_SECRET="${MONGODB_URI:-placeholder-set-in-portal}"
 PLACEHOLDER_IMAGE="mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 
 echo "--- Creating Backend container app ---"
-az containerapp create \
-  --name "$BACKEND_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$ENVIRONMENT_NAME" \
-  --image "$PLACEHOLDER_IMAGE" \
-  --ingress external \
-  --target-port 80 \
-  --min-replicas 1 \
-  --max-replicas 3 \
-  --cpu 0.25 \
-  --memory 0.5Gi \
-  --secrets "mongodb-uri=$MONGODB_SECRET" \
-  --env-vars "MONGODB_URI=secretref:mongodb-uri" \
-  --output none 2>/dev/null || true
+if az containerapp show --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+  echo "Backend app '$BACKEND_APP_NAME' already exists, skipping create."
+else
+  az containerapp create \
+    --name "$BACKEND_APP_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --environment "$ENVIRONMENT_NAME" \
+    --image "$PLACEHOLDER_IMAGE" \
+    --ingress external \
+    --target-port 80 \
+    --min-replicas 1 \
+    --max-replicas 3 \
+    --cpu 0.25 \
+    --memory 0.5Gi \
+    --secrets "mongodb-uri=$MONGODB_SECRET" \
+    --env-vars "MONGODB_URI=secretref:mongodb-uri" \
+    --output none
+fi
 
 # Switch to ACR image and port 8000 (revision may fail until first push)
 az containerapp update --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" \
@@ -98,19 +119,23 @@ echo "Backend URL: $BACKEND_URL"
 # 6) Frontend container app (placeholder until first CI push; workflow builds with BACKEND_URL and updates image)
 FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/${PROJECT_NAME}-frontend:latest"
 echo "--- Creating Frontend container app ---"
-az containerapp create \
-  --name "$FRONTEND_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$ENVIRONMENT_NAME" \
-  --image "$PLACEHOLDER_IMAGE" \
-  --ingress external \
-  --target-port 80 \
-  --min-replicas 1 \
-  --max-replicas 3 \
-  --cpu 0.25 \
-  --memory 0.5Gi \
-  --env-vars "NEXT_PUBLIC_API_URL=$BACKEND_URL" \
-  --output none 2>/dev/null || true
+if az containerapp show --name "$FRONTEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
+  echo "Frontend app '$FRONTEND_APP_NAME' already exists, skipping create."
+else
+  az containerapp create \
+    --name "$FRONTEND_APP_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --environment "$ENVIRONMENT_NAME" \
+    --image "$PLACEHOLDER_IMAGE" \
+    --ingress external \
+    --target-port 80 \
+    --min-replicas 1 \
+    --max-replicas 3 \
+    --cpu 0.25 \
+    --memory 0.5Gi \
+    --env-vars "NEXT_PUBLIC_API_URL=$BACKEND_URL" \
+    --output none
+fi
 
 az containerapp update --name "$FRONTEND_APP_NAME" --resource-group "$RESOURCE_GROUP" \
   --image "$FRONTEND_IMAGE" \
