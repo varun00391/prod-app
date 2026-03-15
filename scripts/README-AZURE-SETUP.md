@@ -49,7 +49,15 @@ Use the same `RESOURCE_GROUP` you used in the setup script. Copy the entire JSON
 
 ### Secrets
 
-- **AZURE_CREDENTIALS** – The full JSON output from the command above (not the client secret alone).
+Add these as **Secrets** (each value comes from the JSON output of the command above):
+
+| Secret name | JSON key |
+|-------------|----------|
+| `AZURE_CLIENT_ID` | `appId` |
+| `AZURE_TENANT_ID` | `tenant` |
+| `AZURE_SUBSCRIPTION_ID` | `subscriptionId` |
+| `AZURE_CLIENT_SECRET` | `password` |
+
 - **MONGODB_URI** – (Optional) MongoDB Atlas connection string. If not set here, configure it in the backend container app in Azure Portal (see below).
 
 ### Variables (from setup script output)

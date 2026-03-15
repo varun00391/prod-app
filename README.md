@@ -74,7 +74,7 @@ This creates: **Resource group**, **Azure Container Registry (ACR)**, Log Analyt
 ### 2. GitHub
 
 - Push this repo to GitHub.
-- **Secrets**: `AZURE_CREDENTIALS` (service principal JSON from `az ad sp create-for-rbac ... --sdk-auth`), optionally `MONGODB_URI`.
+- **Secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_CLIENT_SECRET` (from the JSON of `az ad sp create-for-rbac ... --sdk-auth`: use `appId`, `tenant`, `subscriptionId`, `password`), optionally `MONGODB_URI`.
 - **Variables**: `AZURE_RESOURCE_GROUP`, `ACR_LOGIN_SERVER`, `CONTAINER_APP_BACKEND`, `CONTAINER_APP_FRONTEND`, `BACKEND_URL` (from setup script output).
 
 ### 3. Backend env (MongoDB)
