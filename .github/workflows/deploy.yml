@@ -50,9 +50,15 @@ jobs:
 
       - name: Build and push Frontend
         run: |
+          if [ -z "$BACKEND_URL" ]; then
+            echo "::error::BACKEND_URL is not set. Add it in Settings → Secrets and variables → Actions → Variables. Value = backend app URL (e.g. https://chatgpt-app-backend.xxx.eastus.azurecontainerapps.io)"
+            exit 1
+          fi
           docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest \
             --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_URL }} \
             ./frontend
+        env:
+          BACKEND_URL: ${{ env.BACKEND_URL }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest
 
@@ -68,6 +74,10 @@ jobs:
             --server "$SERVER" \
             --username "$ACR_USER" \
             --password "$ACR_PASS"
+          az containerapp ingress update \
+            --name ${{ env.CONTAINER_APP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --target-port 8000
           az containerapp update \
             --name ${{ env.CONTAINER_APP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -85,6 +95,10 @@ jobs:
             --server "$SERVER" \
             --username "$ACR_USER" \
             --password "$ACR_PASS"
+          az containerapp ingress update \
+            --name ${{ env.CONTAINER_APP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --target-port 3000
           az containerapp update \
             --name ${{ env.CONTAINER_APP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \

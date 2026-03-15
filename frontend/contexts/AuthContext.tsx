@@ -3,6 +3,15 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+function ensureApiUrl(): string {
+  if (!API_URL || API_URL.trim() === "") {
+    throw new Error(
+      "Backend URL is not configured. If you just deployed, set BACKEND_URL in GitHub Actions Variables (Settings → Actions → Variables) to your backend URL (e.g. https://your-backend.azurecontainerapps.io), then push again to rebuild the frontend."
+    );
+  }
+  return API_URL;
+}
 const TOKEN_KEY = "chat_auth_token";
 const USER_KEY = "chat_user";
 
@@ -58,7 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clear]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
+    const baseUrl = ensureApiUrl();
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -72,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const register = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/auth/register`, {
+    const baseUrl = ensureApiUrl();
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
