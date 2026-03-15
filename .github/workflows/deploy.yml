@@ -26,12 +26,16 @@ jobs:
 
       - name: Login to ACR
         run: |
-          # ACR_LOGIN_SERVER must be the registry URL (e.g. myregistry.azurecr.io), not the resource group name
+          # ACR_LOGIN_SERVER must be set in repo Variables (Settings → Actions → Variables)
+          if [ -z "$ACR_LOGIN_SERVER" ]; then
+            echo "::error::ACR_LOGIN_SERVER is not set. Add it in Settings → Secrets and variables → Actions → Variables. Value = your ACR login server from the setup script output (e.g. chatgptappacr35db3d88.azurecr.io)"
+            exit 1
+          fi
           SERVER="${ACR_LOGIN_SERVER#https://}"
           SERVER="${SERVER#http://}"
           ACR_NAME="${SERVER%.azurecr.io}"
           if [ -z "$ACR_NAME" ] || [ "$ACR_NAME" = "$SERVER" ]; then
-            echo "::error::ACR_LOGIN_SERVER must be the ACR login server (e.g. chatgptappacr35db3d88.azurecr.io). Got: $ACR_LOGIN_SERVER"
+            echo "::error::ACR_LOGIN_SERVER must be the ACR login server ending in .azurecr.io (e.g. chatgptappacr35db3d88.azurecr.io). Current value: '$ACR_LOGIN_SERVER'"
             exit 1
           fi
           az acr login --name "$ACR_NAME"
