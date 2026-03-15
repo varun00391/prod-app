@@ -57,10 +57,10 @@ jobs:
           docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest \
             --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_URL }} \
             ./frontend
-        env:
-          BACKEND_URL: ${{ env.BACKEND_URL }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest
+        env:
+          BACKEND_URL: ${{ env.BACKEND_URL }}
 
       - name: Deploy Backend to Container Apps
         run: |
