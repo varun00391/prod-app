@@ -12,5 +12,5 @@ collection = db["messages"]
 print("Connected successfully")
 
 for doc in collection.find().limit(5):
-    print(doc)
+    print(docs)
 
