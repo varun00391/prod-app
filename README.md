@@ -3,7 +3,7 @@
 
 # ChatGPT-like Chat Application
 
-Full-stack chat app with file support (text, images, PDF, Excel, Word, audio), MongoDB persistence, and Azure production deployment (ACR, Container Apps).
+Full-stack chat app with file support (text, images, PDF, Excel, Word, audio).
 
 ## Features
 
@@ -15,8 +15,7 @@ Full-stack chat app with file support (text, images, PDF, Excel, Word, audio), M
 
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS
 - **Backend**: Python FastAPI, Groq API (Llama + Whisper for audio), PyPDF2, openpyxl, python-docx
-- **Database**: MongoDB Atlas
-- **Azure**: Container Registry (ACR), Container Apps, optional Azure Cache for Redis
+- **Azure**: Container Registry (ACR), Container Apps
 
 ## Local development
 
@@ -54,7 +53,7 @@ docker compose up --build
 - **Frontend**: [http://localhost:3000](http://localhost:3000)  
 - **MongoDB**: local only, port 27017 (data in volume `mongodb_data`).
 
-The frontend is built with `NEXT_PUBLIC_API_URL=http://localhost:8000` so the browser talks to the backend. Get a Groq API key at [console.groq.com](https://console.groq.com). To use MongoDB Atlas instead of the local MongoDB, create a `.env` in the project root with `MONGODB_URI=mongodb+srv://...` and run `docker compose up` again.
+The frontend is built with `NEXT_PUBLIC_API_URL=http://localhost:8000` so the browser talks to the backend. Get a Groq API key at [console.groq.com](https://console.groq.com).
 
 ## Production (Azure)
 
@@ -66,27 +65,17 @@ chmod +x scripts/azure-setup.sh
 ./scripts/azure-setup.sh
 ```
 
-This creates: **Resource group**, **Azure Container Registry (ACR)**, Log Analytics workspace, **Container Apps environment**, **Backend** and **Frontend** container apps (with placeholder images until first deploy). See [scripts/README-AZURE-SETUP.md](scripts/README-AZURE-SETUP.md) for details.
+This creates: **Resource group**, **Azure Container Registry (ACR)**, Log Analytics workspace, **Container Apps environment**, **Backend** and **Frontend** container apps (placeholder images until first deploy). See [scripts/README-AZURE-SETUP.md](scripts/README-AZURE-SETUP.md) for details.
 
 ### 2. GitHub
 
 - Push this repo to GitHub.
-- **Secrets**: `AZURE_CREDENTIALS` = JSON with keys `clientId`, `clientSecret`, `tenantId`, `subscriptionId` (if Azure CLI gives `appId`/`password`/`tenant`, rename to those; see scripts/README-AZURE-SETUP.md). Optionally `MONGODB_URI`.
-- **Variables**: `AZURE_RESOURCE_GROUP`, `ACR_LOGIN_SERVER`, `CONTAINER_APP_BACKEND`, `CONTAINER_APP_FRONTEND`, `BACKEND_URL` (from setup script output).
+- **Secrets**: `AZURE_CREDENTIALS` = JSON with keys `clientId`, `clientSecret`, `tenantId`, `subscriptionId` (see scripts/README-AZURE-SETUP.md).
+- **Variables**: `ACR_LOGIN_SERVER`, `BACKEND_URL` (from setup script output), and optionally `AZURE_RESOURCE_GROUP`, `CONTAINER_APP_BACKEND`, `CONTAINER_APP_FRONTEND`, `PROJECT_NAME`.
 
-### 3. Backend env (MongoDB)
+### 3. Deploy
 
-Set `MONGODB_URI` for the backend container app (via setup script env, GitHub secret, or Azure Portal → Container Apps → backend → Environment variables).
-
-### 4. Deploy
-
-On every push to `main`/`master`, GitHub Actions:
-
-1. Builds backend and frontend Docker images  
-2. Pushes to ACR  
-3. Updates both Container Apps to the new images (new revision)
-
-App URLs: **Frontend** and **Backend** FQDNs from setup script output or Azure Portal → Container Apps.
+On every push to `main`/`master`, GitHub Actions builds both images, pushes to ACR, and updates both Container Apps. App URLs: **Frontend** and **Backend** FQDNs from setup script output or Azure Portal.
 
 ## Project layout
 

@@ -26,7 +26,6 @@ jobs:
 
       - name: Login to ACR
         run: |
-          # ACR_LOGIN_SERVER must be set in repo Variables (Settings → Actions → Variables)
           if [ -z "$ACR_LOGIN_SERVER" ]; then
             echo "::error::ACR_LOGIN_SERVER is not set. Add it in Settings → Secrets and variables → Actions → Variables. Value = your ACR login server from the setup script output (e.g. chatgptappacr35db3d88.azurecr.io)"
             exit 1
