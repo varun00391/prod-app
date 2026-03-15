@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 
-MONGO_URI = 
+# Password must NOT be in angle brackets - use the raw password only (no < or >)
+MONGO_URI = "mongodb+srv://varunsingh2191:singhisking003@cluster0.ixt0lag.mongodb.net/?appName=Cluster0"
 
 client = MongoClient(MONGO_URI)
 
