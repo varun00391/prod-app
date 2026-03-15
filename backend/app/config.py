@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # Override with env MONGODB_URI (e.g. Atlas: mongodb+srv://user:pass@cluster.mongodb.net/...)
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_db: str = "chatgpt_app"
     redis_url: str | None = None

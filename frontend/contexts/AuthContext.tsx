@@ -68,11 +68,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const baseUrl = ensureApiUrl();
-    const res = await fetch(`${baseUrl}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${baseUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      throw new Error(
+        `Cannot reach the backend (${msg}). Check BACKEND_URL in GitHub Actions Variables and that the frontend was rebuilt after setting it. Open DevTools → Network to see the request.`
+      );
+    }
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || "Login failed");
@@ -83,11 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (email: string, password: string) => {
     const baseUrl = ensureApiUrl();
-    const res = await fetch(`${baseUrl}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${baseUrl}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      throw new Error(
+        `Cannot reach the backend (${msg}). Check: 1) BACKEND_URL in GitHub Actions Variables is set to your backend URL (e.g. https://chatgpt-app-backend.xxx.azurecontainerapps.io), 2) You pushed after setting it so the frontend was rebuilt, 3) Backend app is running. Open DevTools → Network to see the request.`
+      );
+    }
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || "Registration failed");
