@@ -1,0 +1,60 @@
+name: Build and Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [main, master]
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'chatgpt-app-rg' }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  CONTAINER_APP_BACKEND: ${{ vars.CONTAINER_APP_BACKEND || 'chatgpt-app-backend' }}
+  CONTAINER_APP_FRONTEND: ${{ vars.CONTAINER_APP_FRONTEND || 'chatgpt-app-frontend' }}
+  BACKEND_URL: ${{ vars.BACKEND_URL }}
+  PROJECT_NAME: ${{ vars.PROJECT_NAME || 'chatgpt-app' }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: |
+          ACR_NAME="${ACR_LOGIN_SERVER%%.*}"
+          az acr login --name "$ACR_NAME"
+        env:
+          ACR_LOGIN_SERVER: ${{ env.ACR_LOGIN_SERVER }}
+
+      - name: Build and push Backend
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-backend:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-backend:latest ./backend
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-backend:${{ github.sha }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-backend:latest
+
+      - name: Build and push Frontend
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest \
+            --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_URL }} \
+            ./frontend
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:${{ github.sha }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest
+
+      - name: Deploy Backend to Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-backend:latest
+
+      - name: Deploy Frontend to Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.PROJECT_NAME }}-frontend:latest
