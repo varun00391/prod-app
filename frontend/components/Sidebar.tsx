@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -24,8 +22,6 @@ export function Sidebar({
   getAuthHeaders: () => Record<string, string>;
   isAdmin: boolean;
 }) {
-  const { logout } = useAuth();
-  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,25 +88,11 @@ export function Sidebar({
         )}
       </div>
       <div className="p-2 border-t border-[var(--border)] space-y-1">
-        {isAdmin && (
-          <Link
-            href="/admin"
-            className="block w-full py-2 px-3 rounded-lg text-sm text-[var(--accent)] hover:bg-[var(--border)] transition"
-          >
-            Admin panel
-          </Link>
-        )}
         <button
           onClick={onOpenSettings}
           className="w-full py-2 px-3 rounded-lg text-sm text-[var(--muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition"
         >
           ⚙ Settings (Groq API Key)
-        </button>
-        <button
-          onClick={() => { logout(); router.replace("/login"); }}
-          className="w-full py-2 px-3 rounded-lg text-sm text-[var(--muted)] hover:bg-[var(--border)] hover:text-red-400 transition"
-        >
-          Log out
         </button>
       </div>
     </aside>

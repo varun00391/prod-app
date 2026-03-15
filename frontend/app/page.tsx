@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ChatInterface } from "@/components/ChatInterface";
 import { Sidebar } from "@/components/Sidebar";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -10,19 +9,10 @@ import { useAuth } from "@/contexts/AuthContext";
 const API_KEY_STORAGE = "chat_groq_api_key";
 
 export default function Home() {
-  const { token, loading: authLoading, getAuthHeaders, isAdmin } = useAuth();
-  const router = useRouter();
+  const { loading: authLoading, getAuthHeaders, isAdmin } = useAuth();
   const [apiKey, setApiKeyState] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-  }, [token, authLoading, router]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -38,7 +28,7 @@ export default function Home() {
     }
   }, []);
 
-  if (authLoading || !token) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-[var(--muted)]">Loading...</p>
