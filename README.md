@@ -74,7 +74,7 @@ This creates: **Resource group**, **Azure Container Registry (ACR)**, Log Analyt
 ### 2. GitHub
 
 - Push this repo to GitHub.
-- **Secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_CLIENT_SECRET` (from the JSON of `az ad sp create-for-rbac ... --sdk-auth`: use `appId`, `tenant`, `subscriptionId`, `password`), optionally `MONGODB_URI`.
+- **Secrets**: `AZURE_CREDENTIALS` = JSON with keys `clientId`, `clientSecret`, `tenantId`, `subscriptionId` (if Azure CLI gives `appId`/`password`/`tenant`, rename to those; see scripts/README-AZURE-SETUP.md). Optionally `MONGODB_URI`.
 - **Variables**: `AZURE_RESOURCE_GROUP`, `ACR_LOGIN_SERVER`, `CONTAINER_APP_BACKEND`, `CONTAINER_APP_FRONTEND`, `BACKEND_URL` (from setup script output).
 
 ### 3. Backend env (MongoDB)
@@ -107,4 +107,3 @@ App URLs: **Frontend** and **Backend** FQDNs from setup script output or Azure P
 ## Prompts
 
 All product prompts are saved in [prompt.md](prompt.md).
->>>>>>> be08cb3 (initial commit)

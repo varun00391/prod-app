@@ -49,14 +49,24 @@ Use the same `RESOURCE_GROUP` you used in the setup script. Copy the entire JSON
 
 ### Secrets
 
-Add these as **Secrets** (each value comes from the JSON output of the command above):
+- **AZURE_CREDENTIALS** – A **single JSON** secret. The Azure login action expects these exact key names:
+  - `clientId` (value = your app’s Application (client) ID)
+  - `clientSecret` (value = the service principal password/secret)
+  - `tenantId` (value = your Azure AD tenant ID)
+  - `subscriptionId` (value = your Azure subscription ID)
 
-| Secret name | JSON key |
-|-------------|----------|
-| `AZURE_CLIENT_ID` | `appId` |
-| `AZURE_TENANT_ID` | `tenant` |
-| `AZURE_SUBSCRIPTION_ID` | `subscriptionId` |
-| `AZURE_CLIENT_SECRET` | `password` |
+  The output of `az ad sp create-for-rbac ... --sdk-auth` may use **appId** and **password** and **tenant** instead. If so, create a new JSON that renames them:
+
+  ```json
+  {
+    "clientId": "<paste appId here>",
+    "clientSecret": "<paste password here>",
+    "tenantId": "<paste tenant here>",
+    "subscriptionId": "<paste subscriptionId here>"
+  }
+  ```
+
+  Paste that entire JSON as the value of the **AZURE_CREDENTIALS** secret (no extra spaces or newlines outside the JSON).
 
 - **MONGODB_URI** – (Optional) MongoDB Atlas connection string. If not set here, configure it in the backend container app in Azure Portal (see below).
 
