@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -19,6 +21,8 @@ export function Sidebar({
   onOpenSettings: () => void;
   getAuthHeaders: () => Record<string, string>;
 }) {
+  const { logout } = useAuth();
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +94,15 @@ export function Sidebar({
           className="w-full py-2 px-3 rounded-lg text-sm text-[var(--muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition"
         >
           ⚙ Settings (Groq API Key)
+        </button>
+        <button
+          onClick={() => {
+            logout();
+            router.replace("/login");
+          }}
+          className="w-full py-2 px-3 rounded-lg text-sm text-[var(--muted)] hover:bg-[var(--border)] hover:text-red-400 transition"
+        >
+          Log out
         </button>
       </div>
     </aside>

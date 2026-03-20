@@ -61,6 +61,20 @@ jobs:
         env:
           BACKEND_URL: ${{ env.BACKEND_URL }}
 
+      - name: Configure MongoDB Atlas for backend (optional)
+        if: ${{ secrets.MONGODB_URI != '' }}
+        run: |
+          az containerapp secret set \
+            --name "${{ env.CONTAINER_APP_BACKEND }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --secrets "mongodb-uri=${{ secrets.MONGODB_URI }}" \
+            --output none
+          az containerapp update \
+            --name "${{ env.CONTAINER_APP_BACKEND }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --set-env-vars "MONGODB_URI=secretref:mongodb-uri" \
+            --output none
+
       - name: Deploy Backend to Container Apps
         run: |
           SERVER="${{ env.ACR_LOGIN_SERVER }}"

@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# Azure infrastructure setup for ChatGPT-like app (simple chat, no DB)
+# Azure infrastructure setup for ChatGPT-like app (stateless app; optional MongoDB Atlas for persistence)
 # Run from project root. Requires: Azure CLI (az), logged in (az login)
 
 set -e
 RESOURCE_GROUP="${RESOURCE_GROUP:-chatgpt-app-rg}"
 LOCATION="${LOCATION:-eastus}"
 PROJECT_NAME="${PROJECT_NAME:-chatgpt-app}"
+# Optional: MongoDB Atlas URI. If provided, the backend Container App will be configured to use it.
+# (Useful for conversation persistence per user.)
+MONGODB_URI="${MONGODB_URI:-}"
+MONGODB_DB="${MONGODB_DB:-chatgpt_app}"
+
 # ACR names must be alphanumeric only (no hyphens), 5-50 chars, globally unique
 _SUB_ID=$(az account show --query id -o tsv 2>/dev/null | tr -d '-' || true)
 if [ -n "$_SUB_ID" ]; then
@@ -69,9 +74,20 @@ else
     --output none
 fi
 
-# 5) Backend container app (no DB; placeholder until first CI push)
+# 5) Backend container app (placeholder until first CI push)
 BACKEND_IMAGE="${ACR_LOGIN_SERVER}/${PROJECT_NAME}-backend:latest"
 PLACEHOLDER_IMAGE="mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+
+MONGODB_SECRET_NAME="mongodb-uri"
+MONGODB_SECRET_ARGS=()
+MONGODB_ENV_ARGS=()
+if [ -n "$MONGODB_URI" ]; then
+  echo "MongoDB Atlas configured for backend."
+  MONGODB_SECRET_ARGS=(--secrets "${MONGODB_SECRET_NAME}=${MONGODB_URI}")
+  MONGODB_ENV_ARGS=(--env-vars "MONGODB_URI=secretref:${MONGODB_SECRET_NAME}")
+else
+  echo "MONGODB_URI not provided: backend will use default mongodb://localhost:27017 (conversation persistence will fail unless you set MONGODB_URI)."
+fi
 
 echo "--- Creating Backend container app ---"
 if az containerapp show --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
@@ -88,6 +104,8 @@ else
     --max-replicas 3 \
     --cpu 0.25 \
     --memory 0.5Gi \
+    "${MONGODB_SECRET_ARGS[@]}" \
+    "${MONGODB_ENV_ARGS[@]}" \
     --output none
 fi
 
@@ -100,6 +118,20 @@ az containerapp update --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GR
 az containerapp update --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" \
   --ingress external --target-port 8000 \
   --output none 2>/dev/null || true
+
+if [ -n "$MONGODB_URI" ]; then
+  # Ensure secret/env are applied even if the backend app already existed.
+  az containerapp secret set \
+    --name "$BACKEND_APP_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --secrets "${MONGODB_SECRET_NAME}=${MONGODB_URI}" \
+    --output none
+  az containerapp update \
+    --name "$BACKEND_APP_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --set-env-vars "MONGODB_URI=secretref:${MONGODB_SECRET_NAME}" "MONGODB_DB=$MONGODB_DB" \
+    --output none
+fi
 
 BACKEND_FQDN=$(az containerapp show --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.configuration.ingress.fqdn" --output tsv)
 BACKEND_URL="https://${BACKEND_FQDN}"
