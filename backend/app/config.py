@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 
-
+# 1
 class Settings(BaseSettings):
     # Must be `mongodb_uri`: code uses `settings.mongodb_uri` (see database.py).
     # Override with env MONGODB_URI (pydantic-settings maps it to this field).
